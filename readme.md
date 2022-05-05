@@ -11,7 +11,7 @@
 06-__default_alloc_template.cpp:第二级配置器的剖析
 ```
 
-## 2.具备配置力的SGI空间配置器解析
+## 2. 具备配置力的SGI空间配置器解析
 
 **普通的new操作：**
 
@@ -77,6 +77,8 @@
 
 ### 2.5 第二级配置器剖析
 
+![free-list](MD/assert/2-4-free_list.png)
+
 主要代码在:06-__default_alloc_template.cpp中
 
 **注意：**
@@ -88,12 +90,18 @@
 
 ### 2.6 空间配置函数allocate()
 
+调整free-list
+![free-list](MD/assert/2-5-free_list.png)
+
 - 将在06-__default_alloc_template.cpp中详细解释
 - 此函数要判断区块的大小，决定是否调整到第一级配置器
 - 对于小于128bytes 的检查对应的 free list 查看是否有可用区块(有就用，没有继续)
 - 没有的话就把区块大小调整到8倍数的边界，调用refill()，为free list重新填充空间
 
 ### 2.7 空间释放函数deallocate()
+
+区块回收
+![free-list](MD/assert/2-5-free_list.png)
 
 回收空间，在06-__default_alloc_template.cpp中详细解释
 
@@ -105,6 +113,8 @@
 
 ### 2.9 内存池
 
+![memory-pool](MD/assert/2-7-memory_pool.png)
+
 - 将在06-__default_alloc_template.cpp中详细解释
 
 **找内存的步骤：**
@@ -115,3 +125,39 @@
   - 先把零头给了
   - 零头也没了，配置heap补充一下(这里应该是找free list里面没用的那些给它匀回来)
   - 调用第一级配置器，通过out-of-memory机制改善一下
+
+## 3. 内存基本处理工具
+
+- STL定义五个全局函数，作用于未初始化的空间上
+  - construct():用于构造
+  - destory():用于析构
+  - uninitialized_copy():对应copy()
+  - uninitialized_fill():对应fill()
+  - uninitialized_fill_n():对应fill_n()
+
+### 3.1. uninitialized_copy
+
+![uninitialized_copy](MD/assert/2-8-uninitialized_copy.png)
+
+- 它将内存的配置和对象的构造行为分离开
+- 针对输入范围[first, last)的每个迭代器i，该函数会调用construct( &*( result + ( i - first)),*i),产生一个 *i 的复制品，放置于输出范围的相对位置上。
+- 实现一个容器，它的全区间构造函数的两个步骤：
+  - 配置内存区块，足以包含范围内的所有元素
+  - 使用uninitialized_copy()，在该内存区块上构造元素
+- C++要求它要么"构造出所有必要元素"，要么"不构造任何东西"
+
+### 3.2. uninitialized_fill
+
+![uninitialized_fill](MD/assert/2-8-uninitialized_fill.png)
+
+- 它将内存的配置和对象的构造行为分离开
+- 针对输入范围[first, last)的每个迭代器i，该函数会调用construct( &*i, x),在i所指之处产生一个 x 的复制品。
+- C++要求它妖魔产生所有必要元素，要么不产生任何元素，如果有任何一个拷贝构造丢出异常，它就必须能够将已产生的所有元素析构掉
+
+### 3.3. uninitialized_fill_n
+
+![uninitialized_fill_n](MD/assert/2-8-uninitialized_fill_n.png)
+
+- 它将内存的配置和对象的构造行为分离开,它会为范围内[first, first+n)的所有元素赋相同的初值
+- 针对[first, first+n)范围内的每个迭代器i,该函数会调用construct(&*i, x),在对应位置处产生x的复制品
+- C++要求它要么产生所有必要的元素，要么就不产生任何元素，对任何一个拷贝构造丢出的异常，它必须能够将已产生的所有元素析构掉
