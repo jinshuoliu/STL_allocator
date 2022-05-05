@@ -9,6 +9,9 @@
 04-std_alloc_test.cpp:<stl_construct.h>的部分内容
 05-__malloc_alloc_template.cpp:第一级配置器的剖析
 06-__default_alloc_template.cpp:第二级配置器的剖析
+07-uninitialized_copy.cpp:内存基本处理工具-复制
+08-uninitialized_fill.cpp:内存基本处理工具-填充
+09-uninitialized_fill_n.cpp:内存基本处理工具-填充n个
 ```
 
 ## 2. 具备配置力的SGI空间配置器解析
